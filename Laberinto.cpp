@@ -6,17 +6,14 @@
 
 using namespace std;
 
-const int fila = 15;
-const int columna = 15;
-char matriz[fila][columna];
-int creador[] = {fila-2, columna-1};
-int jugador[] = {fila-1, columna-1};
+int fila, columna;
+char **matriz;
+char **matriz_juego;
+int *creador;
+int *jugador;
 char P = '#', C = '.';
 // izquierda/abajo/arriba/derecha
-int direcciones[4][2] = {{1, 0}, {0, -1}, {-1, 0}, {0, 1}};
-char matriz_juego[fila][columna];
-
-
+int direcciones[4][2];
 
 
 struct Nodo {
@@ -26,13 +23,64 @@ struct Nodo {
 };
 
 void crear_bordes();
-void callejon(int i, int num, int lado);
+void callejon(int lado);
 void crear_laberinto();
-void movimiento_futuro();
+void movimiento_futuro(int futuros[4][2]);
 void imprimir_matriz();
 bool mover_jugador(stack<Nodo>& camino);
 
 int main() {
+    int eleccion=0;
+    cout<<"\033[31m****************************Bienvenido al laberinto****************************\033[0m "<<endl;
+    cout<<"\033[31mSi le gustaria saber mas sobre el codigo puede leer el README en el repositorio\033[0m "<<endl;
+    cout<<"\033[31m***********************************Comencemos**********************************\033[0m "<<endl;
+    while(eleccion!=1 && eleccion!=2){
+        cout<<"Elija su manera de recorrer el laberinto"<<endl;
+        cout<<"1. Apollando la mano izquierda a la pared (DFS)"<<endl;
+        cout<<"2. Recorrer el laberinto y probar cada callejon usando solo (Backtracking)"<<endl;
+        cin>>eleccion;
+    }
+
+    if(eleccion==1){
+        // izquierda/abajo/arriba/derecha
+        //{{1,0}, {0,-1}, {-1,0}, {0,1}}
+        direcciones[0][0]=1;
+        direcciones[0][1]=0;
+        direcciones[1][0]=0;
+        direcciones[1][1]=-1;
+        direcciones[2][0]=-1;
+        direcciones[2][1]=0;
+        direcciones[3][0]=0;
+        direcciones[3][1]=1;
+         
+    }else{
+        //arriba/abajo/derecha/izquierda
+        //{{-1,0}, {1,0}, {0,1}, {0,-1}}
+        direcciones[0][0]=-1;
+        direcciones[0][1]=0;
+        direcciones[1][0]=1;
+        direcciones[1][1]=0;
+        direcciones[2][0]=0;
+        direcciones[2][1]=1;
+        direcciones[3][0]=0;
+        direcciones[3][1]=-1;
+    }
+    
+    cout << "Ingrese el tamaño del laberinto (fila): ";
+    cin >> fila;
+    cout << "Ingrese el tamaño del laberinto (columna): ";
+    cin >> columna;
+    //Asigno la memoria a la matriz
+    matriz = new char*[fila];
+    matriz_juego = new char*[fila];
+    for (int i = 0; i < fila; i++) {
+        matriz[i] = new char[columna];
+        matriz_juego[i] = new char[columna];
+    }
+
+    creador = new int[2]{fila-2, columna-1};
+    jugador = new int[2]{fila-1, columna-1};
+
     crear_laberinto();
 
     for (int i = 0; i < fila; i++) {
@@ -53,10 +101,20 @@ int main() {
             break;
         }
     }
+    cout<<"\033[32mFelicidades aventurero, haz salido del laberinto\033[0m"<<endl;
+    //Libera memoria dinamicamente
+    for (int i = 0; i < fila; i++) {
+        delete[] matriz[i];
+        delete[] matriz_juego[i];
+    }
+    delete[] matriz;
+    delete[] matriz_juego;
+    delete[] creador;
+    delete[] jugador;
 
     return 0;
 }
-//Con la posicion actual de mi jugador mas las direcciones posibles creamos los posibles movimientos a futuros
+//Cargamos los futuros movimientos sumando la posicion del jugador mas las direcciones posibles
 void movimiento_futuro(int futuros[4][2]) {
     for (int i = 0; i < 4; i++) {
         futuros[i][0] = jugador[0] + direcciones[i][0];
@@ -81,7 +139,7 @@ bool mover_jugador(stack<Nodo>& camino) {
         }
     }
 
-    // Si no se puede mover, retroceder
+    //Si no se puede mover, retroceder
     if (!camino.empty()) {
         Nodo anterior = camino.top();
         camino.pop();
@@ -95,7 +153,7 @@ bool mover_jugador(stack<Nodo>& camino) {
     }
     return false;
 }
-
+//Antes de crear los callejones, se genera el borde del mapa
 void crear_bordes() {
     for (int i = 0; i < columna; i++) {
         if (matriz[0][i] != C) {
@@ -128,18 +186,18 @@ void callejon(int lado) {
         //Izquierda
         for (int j = 0; j < 2; j++) {
             aux -= 1;
-            if (matriz[creador[0]][aux] != P) {
+            if (aux >= 0 && matriz[creador[0]][aux] != P) {
                 matriz[creador[0]][aux] = C;
             }
         }
 
         for (int j = 0; j < 3; j++) {
             //Abajo
-            if (matriz[creador[0] + j][aux] != P) {
+            if (creador[0] + j < fila && matriz[creador[0] + j][aux] != P) {
                 matriz[creador[0] + j][aux] = C;
             }
             //Arriba
-            if (matriz[creador[0] - j][aux] != P) {
+            if (creador[0] - j >= 0 && matriz[creador[0] - j][aux] != P) {
                 matriz[creador[0] - j][aux] = C;
             }
         }
@@ -150,31 +208,26 @@ void callejon(int lado) {
         //Arriba
         for (int j = 0; j < 2; j++) {
             aux -= 1;
-            if (matriz[aux][creador[1]] != P) {
+            if (aux >= 0 && matriz[aux][creador[1]] != P) {
                 matriz[aux][creador[1]] = C;
             }
         }
 
         for (int j = 0; j < 3; j++) {
             //Derecha
-            if (matriz[aux][creador[1] + j] != P) {
+            if (creador[1] + j < columna && matriz[aux][creador[1] + j] != P) {
                 matriz[aux][creador[1] + j] = C;
             }
             //Izquierda
-            if (matriz[aux][creador[1] - j] != P) {
+            if (creador[1] - j >= 0 && matriz[aux][creador[1] - j] != P) {
                 matriz[aux][creador[1] - j] = C;
             }
         }
     }
-   
-    
-    
-
 }
 
 void crear_laberinto() {
     srand(time(0));
-    bool b=true;
     for (int i = 0; i < fila; i++) {
         for (int j = 0; j < columna; j++) {
             matriz[i][j] = ' ';
@@ -182,7 +235,6 @@ void crear_laberinto() {
     }
     //Coloca el punto de entrada
     matriz[fila-2][columna-1] = C;
-    srand(time(0));
 
     crear_bordes();
     //Genera la ruta correcta y a la vez algunos callejones sin salida, proximamente, en los espacios no ocupados se generarian paredes o mas caminos de manera aleatoria
@@ -201,7 +253,7 @@ void crear_laberinto() {
         num = rand() % 3 + 2;
         for (int i = 0; i < num; i++) {
             creador[0] -= 1;
-            if (creador[1] >= 0 && b == true) {
+            if (creador[0] >= 0) {
                 matriz[creador[0]][creador[1]] = C;
             }
             if (i == (num-1) && creador[0] >= 2) {
@@ -209,44 +261,36 @@ void crear_laberinto() {
             }
         }
     }
-    //Genera caminos o pared en los lugares aun libre, con una posibilidad de 20% a que sea camino y 80% que sea pared de manera aleatoria
+    //Genera caminos o pared en los lugares aun libre, con una posibilidad variable de acuerdo al tamaño
     for (int i = 0; i < fila; i++) {
         for (int j = 0; j < columna; j++) {
             int num = rand() % 10 + 1;
 
             if (matriz[i][j] != C && matriz[i][j] != P) {
-                switch (num) {
-                    case 1:
+                if(fila<25 || columna<25){                  //Si mi laberinto es chico tiene una probabilidad de 20% de ser camino y 80% pared
+                    if (num <= 8) {
                         matriz[i][j] = '#';
-                        break;
-                    case 2:
-                        matriz[i][j] = '#';
-                        break;
-                    case 3:
+                    } else {
                         matriz[i][j] = '.';
-                        break;
-                    case 4:
-                        matriz[i][j] = '#';
-                        break;
-                    case 5:
-                        matriz[i][j] = '#';
-                        break;
-                    case 6:
-                        matriz[i][j] = '#';
-                        break;
-                    case 7:
-                        matriz[i][j] = '.';
-                        break;
-                    case 8:
-                        matriz[i][j] = '#';
-                        break;
-                    case 9:
-                        matriz[i][j] = '#';
-                        break;
-                    case 10:
-                        matriz[i][j] = '#';
-                        break;
+                    }
                 }
+                else if (fila<50 || columna<50){           //Si mi laberinto es mediano tiene una probabilidad de 40% de ser camino y 60% pared
+                
+                    if (num <= 6) {
+                        matriz[i][j] = '#';
+                    } else {
+                        matriz[i][j] = '.';
+                    }
+                }
+                else{
+                    if (num <= 5) {                         //Si mi laberinto es grande tiene una probabilidad de 50% de ser camino y 50% pared
+                        matriz[i][j] = '#';
+                    } else {
+                        matriz[i][j] = '.';
+                    }
+                }
+                
+                    
             }
         }
     }
@@ -257,21 +301,19 @@ void crear_laberinto() {
         }
         cout << endl;
     }
-    cout<<endl;
+    cout << endl;
 }
-//imprime la matriz 
+
 void imprimir_matriz() {
     for (int i = 0; i < fila; i++) {
         for (int j = 0; j < columna; j++) {
-            if(matriz_juego[i][j]=='o'){
-                cout <<"\033[32mo\033[0m "  ;
-            }
-            else if(matriz_juego[i][j]=='X'){
+            if (matriz_juego[i][j] == 'o') {
+                cout << "\033[32mo\033[0m ";
+            } else if (matriz_juego[i][j] == 'X') {
                 cout << "\033[31mX\033[0m ";
-            }else{
+            } else {
                 cout << matriz_juego[i][j] << " ";
             }
-            
         }
         cout << endl;
     }
