@@ -31,11 +31,13 @@ bool mover_jugador(stack<Nodo>& camino);
 
 int main() {
     int eleccion=0;
-    cout<<"\033[31m****************************Bienvenido al laberinto****************************\033[0m "<<endl;
+    cout<<endl;
+    cout<<"\033[31m*************************** Bienvenido al laberinto ***************************\033[0m "<<endl;
     cout<<"\033[31mSi le gustaria saber mas sobre el codigo puede leer el README en el repositorio\033[0m "<<endl;
-    cout<<"\033[31m***********************************Comencemos**********************************\033[0m "<<endl;
+    cout<<"\033[31m********************************** Comencemos *********************************\033[0m "<<endl;
+    cout<<endl;
     while(eleccion!=1 && eleccion!=2){
-        cout<<"Elija su manera de recorrer el laberinto"<<endl;
+        cout<<"****************** Elija su manera de recorrer el laberinto *******************"<<endl;
         cout<<"1. Apollando la mano izquierda a la pared (DFS)"<<endl;
         cout<<"2. Recorrer el laberinto y probar cada callejon usando solo (Backtracking)"<<endl;
         cin>>eleccion;
